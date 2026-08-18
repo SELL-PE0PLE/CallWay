@@ -4,12 +4,16 @@
 const peer = new Peer(undefined, { host: '0.peerjs.com', port: 443, secure: true });
 let call, roomId, stream;
 
-// Автоматически подключаемся, если перешли по ссылке
+// Проверяем, есть ли приглашение в ссылке
 const params = new URLSearchParams(window.location.search);
 const inviteCode = params.get('startapp')?.replace('room_', '');
 
 if (inviteCode) {
-  joinRoom(inviteCode);
+  // Присоединяемся автоматически
+  startCall(inviteCode);
+} else {
+  // Создаем комнату и показываем ссылку
+  createRoom();
 }
 
 async function createRoom() {
@@ -26,19 +30,17 @@ async function createRoom() {
   });
   
   const link = `https://t.me/CallWayRobot/call?startapp=room_${roomId}`;
-  navigator.share({ text: `Присоединяйся: ${link}` });
+  // Копируем ссылку и показываем
+  navigator.clipboard.writeText(link);
+  document.body.innerHTML = `Ссылка скопирована: ${link}`;
 }
 
-async function joinRoom(id) {
-  if (!stream) {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  }
+async function startCall(id) {
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   call = peer.call(id, stream);
   call.on('stream', (remote) => {
     document.querySelector('audio').srcObject = remote;
   });
 }
 </script>
-
-<button onclick="createRoom()">🔊 Создать звонок</button>
 <audio autoplay></audio>
