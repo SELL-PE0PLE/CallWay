@@ -1,1 +1,245 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#111116">
+    <meta name="description" content="CallWay — общайся голосом вместе с друзьями.">
+
+    <title>CallWay</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- HEADER -->
+        <header class="header">
+            <a href="#" class="logo">
+                <span class="logo-icon">C</span>
+                <span>CallWay</span>
+            </a>
+
+            <div class="header-status">
+                <span class="status-dot"></span>
+                <span>Voice communication</span>
+            </div>
+        </header>
+
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <section class="welcome">
+                <div class="welcome-label">
+                    <span class="welcome-line"></span>
+                    YOUR SPACE TO TALK
+                </div>
+
+                <h1>
+                    Просто общайся.<br>
+                    <span>Будь собой.</span>
+                </h1>
+
+                <p class="welcome-description">
+                    Создавай комнаты, приглашай друзей
+                    и общайся с помощью своих масок.
+                </p>
+            </section>
+
+
+            <!-- MASK SELECTION -->
+            <section class="mask-section">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Выбери свою маску</h2>
+                        <p>Кем ты будешь сегодня?</p>
+                    </div>
+
+                    <span class="selection-label">YOUR CHARACTER</span>
+                </div>
+
+
+                <div class="mask-list">
+
+                    <!-- DOG -->
+                    <button
+                        class="mask-card active"
+                        type="button"
+                        data-mask="dog"
+                        aria-pressed="true"
+                    >
+                        <div class="mask-image dog-image">
+                            <div class="mask-placeholder">🐶</div>
+                        </div>
+
+                        <div class="mask-info">
+                            <h3>Собака</h3>
+                            <p>Мужской голос</p>
+                        </div>
+
+                        <span class="mask-check">✓</span>
+                    </button>
+
+
+                    <!-- CAT -->
+                    <button
+                        class="mask-card"
+                        type="button"
+                        data-mask="cat"
+                        aria-pressed="false"
+                    >
+                        <div class="mask-image cat-image">
+                            <div class="mask-placeholder">🐱</div>
+                        </div>
+
+                        <div class="mask-info">
+                            <h3>Кошка</h3>
+                            <p>Женский голос</p>
+                        </div>
+
+                        <span class="mask-check">✓</span>
+                    </button>
+
+                </div>
+            </section>
+
+
+            <!-- ROOM ACTIONS -->
+            <section class="room-section">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Начать общение</h2>
+                        <p>Создай комнату или подключись к другу.</p>
+                    </div>
+                </div>
+
+
+                <div class="room-grid">
+
+                    <!-- CREATE ROOM -->
+                    <div class="room-card create-card">
+
+                        <div class="room-card-icon">↗</div>
+
+                        <h3>Создать комнату</h3>
+
+                        <p>
+                            Создай собственную комнату
+                            и пригласи другого участника.
+                        </p>
+
+                        <button
+                            class="primary-button"
+                            id="createRoomButton"
+                            type="button"
+                        >
+                            Создать комнату
+                            <span>→</span>
+                        </button>
+
+                    </div>
+
+
+                    <!-- JOIN ROOM -->
+                    <div class="room-card join-card">
+
+                        <div class="room-card-icon">⌕</div>
+
+                        <h3>Войти в комнату</h3>
+
+                        <p>
+                            Введи код комнаты,
+                            который отправил тебе друг.
+                        </p>
+
+                        <form id="joinRoomForm">
+
+                            <label for="roomCode">
+                                КОД КОМНАТЫ
+                            </label>
+
+                            <input
+                                id="roomCode"
+                                type="text"
+                                placeholder="abc-defg-hij"
+                                maxlength="12"
+                                autocomplete="off"
+                                required
+                            >
+
+                            <button
+                                class="secondary-button"
+                                type="submit"
+                            >
+                                Подключиться
+                                <span>→</span>
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- INFO -->
+            <section class="features">
+
+                <div class="feature">
+                    <span class="feature-icon">01</span>
+                    <div>
+                        <h4>Только вдвоём</h4>
+                        <p>Личные комнаты для двух участников.</p>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <span class="feature-icon">02</span>
+                    <div>
+                        <h4>Голосовое общение</h4>
+                        <p>Микрофон и озвучивание сообщений.</p>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <span class="feature-icon">03</span>
+                    <div>
+                        <h4>Твои маски</h4>
+                        <p>Собака и кошка с анимацией речи.</p>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <span>© 2026 CallWay</span>
+            <span>Made for communication.</span>
+        </footer>
+
+    </div>
+
+
+    <!-- NOTIFICATION -->
+    <div class="notification" id="notification" role="status" aria-live="polite">
+        <span id="notificationText"></span>
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+                          </html>
+                          
