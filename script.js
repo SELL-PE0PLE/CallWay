@@ -1,110 +1,335 @@
 
+'use strict';
+
+// ==========================================
+// CALLWAY — MAIN SCRIPT
+// ==========================================
+
+// Элементы страницы
 const createRoomButton = document.getElementById('createRoomButton');
 const joinRoomForm = document.getElementById('joinRoomForm');
 const roomCodeInput = document.getElementById('roomCode');
 const notification = document.getElementById('notification');
 
+const roomResult = document.getElementById('roomResult');
+const resultEyebrow = document.getElementById('resultEyebrow');
+const resultTitle = document.getElementById('resultTitle');
+const resultDescription = document.getElementById('resultDescription');
+const resultCode = document.getElementById('resultCode');
+const copyRoomCodeButton = document.getElementById('copyRoomCode');
+
+const maskButtons = document.querySelectorAll('.mask[data-mask]');
+
 let selectedMask = 'dog';
+let currentRoomCode = '';
+let notificationTimeout = null;
+
+// ==========================================
+// NOTIFICATIONS
+// ==========================================
 
 function showNotification(message) {
-  notification.textContent = message;
-  notification.hidden = false;
+  if (!notification) return;
 
-  window.clearTimeout(showNotification.timeout);
-  showNotification.timeout = window.setTimeout(() => {
-    notification.hidden = true;
+  notification.textContent = message;
+  notification.classList.add('show');
+
+  clearTimeout(notificationTimeout);
+
+  notificationTimeout = setTimeout(() => {
+    notification.classList.remove('show');
   }, 3500);
 }
 
-// Выбор маски
-document.querySelectorAll('.mask-card').forEach((card) => {
-  card.addEventListener('click', () => {
-    selectedMask = card.dataset.mask;
+// ==========================================
+// MASK SELECTION
+// ==========================================
 
-    document.querySelectorAll('.mask-card').forEach((item) => {
-      item.style.borderColor = '';
-    });
+function selectMask(mask, notify = true) {
+  if (!['dog', 'cat'].includes(mask)) return;
 
-    card.style.borderColor = 'var(--accent)';
+  selectedMask = mask;
+
+  maskButtons.forEach(button => {
+    const isSelected = button.dataset.mask === mask;
+
+    button.classList.toggle('selected', isSelected);
+    button.setAttribute('aria-pressed', String(isSelected));
+  });
+
+  if (notify) {
     showNotification(
-      selectedMask === 'dog'
-        ? 'Выбрана маска Dog'
-        : 'Выбрана маска Cat'
+      mask === 'dog'
+        ? 'Выбрана маска: Собака'
+        : 'Выбрана маска: Кошка'
     );
+  }
+}
+
+maskButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    selectMask(button.dataset.mask);
   });
 });
 
-// Создание кода комнаты
-function generateRoomCode() {
-  const first = Math.random().toString(36).slice(2, 5);
-  const second = Math.random().toString(36).slice(2, 6);
-  const third = Math.random().toString(36).slice(2, 5);
+// ==========================================
+// ROOM CODE GENERATOR
+// Format: abc-abcd-abc
+// ==========================================
 
-  return `${first}-${second}-${third}`;
+function generateRoomCode() {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  const randomValues = new Uint8Array(10);
+
+  if (!window.crypto || !window.crypto.getRandomValues) {
+    throw new Error('Secure random generator is unavailable');
+  }
+
+  window.crypto.getRandomValues(randomValues);
+
+  const letters = Array.from(randomValues, value => {
+    return alphabet[value % alphabet.length];
+  }).join('');
+
+  return (
+    letters.slice(0, 3) +
+    '-' +
+    letters.slice(3, 7) +
+    '-' +
+    letters.slice(7, 10)
+  );
 }
 
-// Создание комнаты
-createRoomButton.addEventListener('click', () => {
-  const roomCode = generateRoomCode();
+// ==========================================
+// ROOM URL
+// ==========================================
 
-  const roomUrl = new URL(window.location.href);
-  roomUrl.searchParams.set('room', roomCode);
-  roomUrl.searchParams.set('mask', selectedMask);
+function updateRoomUrl(roomCode, mask) {
+  const url = new URL(window.location.href);
 
-  window.history.pushState({}, '', roomUrl);
+  url.searchParams.set('room', roomCode);
+  url.searchParams.set('mask', mask);
 
-  showNotification(`Комната создана: ${roomCode}`);
+  window.history.pushState(
+    { room: roomCode, mask },
+    '',
+    url
+  );
+}
 
-  // Позже здесь подключим Supabase и WebRTC.
-  window.setTimeout(() => {
-    showNotification('Следующий этап — подключение звонка');
-  }, 1800);
-});
+// ==========================================
+// ROOM RESULT
+// ==========================================
 
-// Подключение по коду
-joinRoomForm.addEventListener('submit', (event) => {
-  event.preventDefault();
+function displayRoom(roomCode, type) {
+  if (!roomResult) return;
 
-  const roomCode = roomCodeInput.value
-    .trim()
-    .toLowerCase();
+  currentRoomCode = roomCode;
 
-  const roomCodePattern = /^[a-z0-9]{3}-[a-z0-9]{4}-[a-z0-9]{3}$/;
+  roomResult.hidden = false;
 
-  if (!roomCodePattern.test(roomCode)) {
-    showNotification('Проверь код комнаты. Пример: abc-defg-hij');
+  if (type === 'created') {
+    resultEyebrow.textContent = 'КОМНАТА СОЗДАНА';
+    resultTitle.textContent = 'Отправь приглашение другу';
+    resultDescription.textContent =
+      'Скопируй код комнаты и отправь его другу.';
+  } else {
+    resultEyebrow.textContent = 'КОД ПРИНЯТ';
+    resultTitle.textContent = 'Приглашение открыто';
+    resultDescription.textContent =
+      'Код введён. Для реального подключения нужна проверка комнаты через сервер.';
+  }
+
+  resultCode.textContent = roomCode;
+
+  roomResult.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
+}
+
+// ==========================================
+// CREATE ROOM
+// ==========================================
+
+if (createRoomButton) {
+  createRoomButton.addEventListener('click', () => {
+    try {
+      createRoomButton.disabled = true;
+
+      const roomCode = generateRoomCode();
+
+      updateRoomUrl(roomCode, selectedMask);
+      displayRoom(roomCode, 'created');
+
+      showNotification('Комната создана!');
+    } catch (error) {
+      console.error('CallWay room creation error:', error);
+      showNotification('Не удалось создать комнату.');
+    } finally {
+      createRoomButton.disabled = false;
+    }
+  });
+}
+
+// ==========================================
+// JOIN ROOM
+// ==========================================
+
+if (joinRoomForm) {
+  joinRoomForm.addEventListener('submit', event => {
+    event.preventDefault();
+
+    const roomCode = roomCodeInput.value
+      .trim()
+      .toLowerCase();
+
+    const pattern = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
+
+    if (!pattern.test(roomCode)) {
+      showNotification(
+        'Код должен быть в формате abc-abcd-abc.'
+      );
+
+      roomCodeInput.focus();
+      return;
+    }
+
+    updateRoomUrl(roomCode, selectedMask);
+    displayRoom(roomCode, 'joined');
+
+    showNotification('Код принят!');
+  });
+}
+
+// ==========================================
+// COPY ROOM CODE
+// ==========================================
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const textarea = document.createElement('textarea');
+
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  const successful = document.execCommand('copy');
+
+  textarea.remove();
+
+  if (!successful) {
+    throw new Error('Copy failed');
+  }
+
+  return true;
+}
+
+if (copyRoomCodeButton) {
+  copyRoomCodeButton.addEventListener('click', async () => {
+    if (!currentRoomCode) {
+      showNotification('Нет кода для копирования.');
+      return;
+    }
+
+    try {
+      await copyText(currentRoomCode);
+
+      showNotification('Код скопирован!');
+
+      copyRoomCodeButton.textContent = 'Скопировано ✓';
+
+      setTimeout(() => {
+        copyRoomCodeButton.textContent = 'Копировать';
+      }, 2000);
+    } catch (error) {
+      console.error('CallWay clipboard error:', error);
+      showNotification('Не удалось скопировать код.');
+    }
+  });
+}
+
+// ==========================================
+// RESTORE ROOM FROM URL
+// ==========================================
+
+function restoreRoomFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+
+  const roomCode = params.get('room');
+  const mask = params.get('mask');
+
+  if (mask === 'dog' || mask === 'cat') {
+    selectMask(mask, false);
+  }
+
+  if (!roomCode) return;
+
+  const normalizedCode = roomCode.toLowerCase();
+  const pattern = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
+
+  if (!pattern.test(normalizedCode)) {
+    showNotification('Ссылка содержит неправильный код комнаты.');
     return;
   }
 
-  const roomUrl = new URL(window.location.href);
-  roomUrl.searchParams.set('room', roomCode);
-  roomUrl.searchParams.set('mask', selectedMask);
+  if (roomCodeInput) {
+    roomCodeInput.value = normalizedCode;
+  }
 
-  window.history.pushState({}, '', roomUrl);
+  displayRoom(normalizedCode, 'joined');
 
-  showNotification(`Код комнаты принят: ${roomCode}`);
-
-  // Позже здесь подключим проверку комнаты через Supabase.
-});
-
-// Автоматическое заполнение, если пользователь открыл ссылку комнаты
-const params = new URLSearchParams(window.location.search);
-const existingRoom = params.get('room');
-const existingMask = params.get('mask');
-
-if (existingRoom) {
-  roomCodeInput.value = existingRoom;
-  showNotification(`Открыта ссылка комнаты: ${existingRoom}`);
+  showNotification('Ссылка-приглашение открыта.');
 }
 
-if (existingMask === 'dog' || existingMask === 'cat') {
-  selectedMask = existingMask;
+// ==========================================
+// BROWSER NAVIGATION
+// ==========================================
 
-  const selectedCard = document.querySelector(
-    `.mask-card[data-mask="${selectedMask}"]`
-  );
+window.addEventListener('popstate', () => {
+  restoreRoomFromUrl();
+});
 
-  if (selectedCard) {
-    selectedCard.style.borderColor = 'var(--accent)';
-  }
+// ==========================================
+// INPUT NORMALIZATION
+// ==========================================
+
+if (roomCodeInput) {
+  roomCodeInput.addEventListener('input', () => {
+    let value = roomCodeInput.value
+      .toLowerCase()
+      .replace(/[^a-z]/g, '')
+      .slice(0, 10);
+
+    if (value.length > 7) {
+      value =
+        value.slice(0, 3) +
+        '-' +
+        value.slice(3, 7) +
+        '-' +
+        value.slice(7);
+    } else if (value.length > 3) {
+      value =
+        value.slice(0, 3) +
+        '-' +
+        value.slice(3);
     }
+
+    roomCodeInput.value = value;
+  });
+}
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+
+restoreRoomFromUrl();
+
+console.log('CallWay initialized successfully.');
